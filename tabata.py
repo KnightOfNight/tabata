@@ -182,25 +182,32 @@ class Screen():
         curses.init_pair(_COLOR_GREEN, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(_COLOR_BLUE, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
+    def check(self):
+        (max_y, max_x) = self.window.getmaxyx()
+
+        assert 15 <= max_y <= 20, 'max_y = %d' % max_y
+
     def refresh(self):
         self.window.refresh()
 
     def header(self):
         (_, max_x) = self.window.getmaxyx()
-        for row in range(0, 3):
-            self.window.addstr(row, 0, ' ' * max_x, curses.color_pair(_COLOR_INVERSE))
+        row = 0
+        self.window.addstr(row, 1, ' ' * (max_x - 2), curses.color_pair(_COLOR_INVERSE))
         pos_x = int( (max_x / 2) - (len(_TITLE) / 2) )
-        self.window.addstr(1, pos_x, _TITLE, curses.color_pair(_COLOR_INVERSE))
+        self.window.addstr(row, pos_x, _TITLE, curses.color_pair(_COLOR_INVERSE))
 
     def footer(self):
         (max_y, max_x) = self.window.getmaxyx()
-        for row in range(max_y - 4, max_y - 1):
-            self.window.addstr(row, 0, ' ' * max_x, curses.color_pair(_COLOR_INVERSE))
-        pos_x = 2
+        row = max_y - 1
+#        for row in range(max_y - 3, max_y):
+#            self.window.addstr(row, 1, ' ' * (max_x-2), curses.color_pair(_COLOR_INVERSE))
+        self.window.addstr(row, 1, ' ' * (max_x - 2), curses.color_pair(_COLOR_INVERSE))
+        pos_x = 3
         date = datetime.datetime.now().strftime('%Y-%m-%d')
-        self.window.addstr(max_y - 3, pos_x, date, curses.color_pair(_COLOR_INVERSE))
-        pos_x = max_x - len(_VERSION) - 2
-        self.window.addstr(max_y - 3, pos_x, _VERSION, curses.color_pair(_COLOR_INVERSE))
+        self.window.addstr(row, pos_x, date, curses.color_pair(_COLOR_INVERSE))
+        pos_x = max_x - len(_VERSION) - pos_x
+        self.window.addstr(row, pos_x, _VERSION, curses.color_pair(_COLOR_INVERSE))
 
     def clear(self):
         (max_y, _) = self.window.getmaxyx()
@@ -208,8 +215,11 @@ class Screen():
             self.window.move(row, 0)
             self.window.clrtoeol()
 
-    def number(self, number, start_y=5, start_x=5):
-        config = characters.numbers(number)
+    def draw_character(self, c, color=None, start_y=5, start_x=5):
+        if not color:
+            color = curses.color_pair(_COLOR_INVERSE)
+
+        config = characters.characters(c)
 
         row_num = start_y
 
@@ -218,40 +228,60 @@ class Screen():
 
             for column in row:
                 if column == ' ':
-                    color = curses.color_pair(_COLOR_NORMAL)
+                    pixel_color = curses.color_pair(_COLOR_NORMAL)
                 elif column == 'X':
-                    color = curses.color_pair(_COLOR_RED)
+                    pixel_color = color
 
-                self.window.addstr(row_num, col_num, ' ', color)
+                self.window.addstr(row_num, col_num, ' ', pixel_color)
 
                 col_num += 1
 
             row_num += 1
+
+    def clock(self, seconds):
+        assert seconds <= 5940
+
+        (max_y, max_x) = self.window.getmaxyx()
+
+        pos_y = int( (max_y / 2) - (characters.height / 2) )
+
+        while seconds:
+            time_str = "%.2d:%.2d" % (int(seconds / 60), seconds % 60)
+
+            if seconds <= 10:
+                color = curses.color_pair(_COLOR_RED)
+            else:
+                color = curses.color_pair(_COLOR_INVERSE)
+
+            pos_x = int( (max_x / 2) - (len(time_str) * characters.spacing / 2) )
+
+            for c in time_str:
+                self.draw_character(c, start_y=pos_y, start_x=pos_x, color=color)
+                pos_x += characters.spacing
+
+            self.window.move(max_y-1, max_x-1)
+
+            self.refresh()
+
+            seconds -= 1
+
+            time.sleep(1)
 
     def key(self):
         return(self.window.getch())
 
 def main(window):
     screen = Screen(window)
+    screen.check()
     screen.header()
     screen.footer()
-    for number in range(0, 10):
-        screen.number(number)
-        screen.refresh()
-        time.sleep(2)
+    screen.clock(30)
+    screen.clock(10)
+    screen.clock(5)
+
     k = screen.key()
 
 # oldmain()
-
-for number in range(0, 10):
-    config = characters.numbers(number)
-    if len(config) != 9:
-        print('error in number %d: invalid number of rows (%d)' % (number, len(config)))
-    for row in config:
-        if len(row) != 9:
-            print('error in number %d: invalid number of columns (%d)' % (number, len(row)))
-
-#sys.exit()
 
 curses.wrapper(main)
 

@@ -1,6 +1,20 @@
-def numbers(character):
-    config = [
-        [
+height = 9
+spacing = 13
+
+def characters(c):
+    config = {
+        ":" : [
+                '         ',
+                '         ',
+                '   XXX   ',
+                '   XXX   ',
+                '         ',
+                '   XXX   ',
+                '   XXX   ',
+                '         ',
+                '         ',
+        ],
+        '0' : [
             'XXXXXXXXX',
             'XX     XX',
             'XX     XX',
@@ -11,18 +25,18 @@ def numbers(character):
             'XX     XX',
             'XXXXXXXXX',
         ],
-        [
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
-            '   XXX   ',
+        '1' : [
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
+            '    XX   ',
         ],
-        [
+        '2': [
             'XXXXXXXXX',
             '       XX',
             '       XX',
@@ -33,7 +47,7 @@ def numbers(character):
             'XX       ',
             'XXXXXXXXX',
         ],
-        [
+        '3': [
             'XXXXXXXXX',
             '       XX',
             '       XX',
@@ -44,7 +58,7 @@ def numbers(character):
             '       XX',
             'XXXXXXXXX',
         ],
-        [
+        '4': [
             'XX     XX',
             'XX     XX',
             'XX     XX',
@@ -55,7 +69,7 @@ def numbers(character):
             '       XX',
             '       XX',
         ],
-        [
+        '5': [
             'XXXXXXXXX',
             'XX       ',
             'XX       ',
@@ -66,7 +80,7 @@ def numbers(character):
             '       XX',
             'XXXXXXXXX',
         ],
-        [
+        '6': [
             'XXXXXXXXX',
             'XX       ',
             'XX       ',
@@ -77,7 +91,7 @@ def numbers(character):
             'XX     XX',
             'XXXXXXXXX',
         ],
-        [
+        '7': [
             'XXXXXXXXX',
             '       XX',
             '       XX',
@@ -88,7 +102,7 @@ def numbers(character):
             '       XX',
             '       XX',
         ],
-        [
+        '8': [
             'XXXXXXXXX',
             'XX     XX',
             'XX     XX',
@@ -99,7 +113,7 @@ def numbers(character):
             'XX     XX',
             'XXXXXXXXX',
         ],
-        [
+        '9': [
             'XXXXXXXXX',
             'XX     XX',
             'XX     XX',
@@ -110,5 +124,6 @@ def numbers(character):
             '       XX',
             '       XX',
         ],
-    ]   
-    return config[int(character)]
+    }   
+
+    return config[c]
