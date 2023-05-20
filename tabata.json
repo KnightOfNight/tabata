@@ -1,0 +1,99 @@
+{
+    "start_time"       : 30,
+
+    "item_time"        : 30,
+
+    "item_rest_time"   : 30,
+
+    "item_switch_time" : 10,
+
+    "rounds"           : 3,
+
+    "round_rest_time"  : 30,
+
+    "group_rest_time"  : 240,
+
+    "groups" : [
+        [
+            {
+                "type" : "exercise", "name" : "squats"
+            },
+
+            {
+                "type" : "rest"
+            },
+
+            {
+                "type" : "exercise", "name" : "modified pushups"
+            },
+
+            {
+                "type" : "rest"
+            },
+
+            {
+                "type" : "exercise", "name" : "leg lowers"
+            }
+        ],
+
+        [
+            {
+                "type" : "exercise", "name" : "lunge right"
+            },
+
+            {
+                "type" : "switch"
+            },
+
+            {
+                "type" : "exercise", "name" : "lunge left"
+            },
+
+            {
+                "type" : "rest"
+            },
+
+            {
+                "type" : "exercise", "name" : "behind the back pull aparts"
+            },
+
+            {
+                "type" : "rest"
+            },
+
+            {
+                "type" : "exercise", "name" : "russian twist"
+            }
+        ],
+
+        [
+            {
+                "type" : "exercise", "name" : "modified side plank with clamshell right"
+            },
+
+            {
+                "type" : "switch"
+            },
+
+            {
+                "type" : "exercise", "name" : "modified side plank with clamshell left"
+            },
+
+            {
+                "type" : "rest"
+            },
+
+            {
+                "type" : "exercise", "name" : "bear plank"
+            },
+
+            {
+                "type" : "rest"
+            },
+
+            {
+                "type" : "exercise", "name" : "opposite arm and leg lowers"
+            }
+        ]
+    ]
+}
