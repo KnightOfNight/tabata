@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 
+import curses
+import datetime
 import json
 import math
 import signal
 import subprocess
 import sys
 import time
+
+import characters
+
+_COLOR_NORMAL = 1
+_COLOR_INVERSE = 2
+_COLOR_RED = 3
+_COLOR_GREEN = 4
+_COLOR_BLUE = 5
+
+_TITLE = 'TABATA TIMER'
+_VERSION = 'Version 2.0.0'
 
 LAST_MSG = ""
 
@@ -26,7 +39,7 @@ def handler(signum, frame):
         else:
             print('Invalid key.')
 
-signal.signal(signal.SIGINT, handler)
+# signal.signal(signal.SIGINT, handler)
 
 def run(cmd):
     subprocess.run(cmd.split(' '))
@@ -79,7 +92,7 @@ def countdown(timer, msg):
     print()
     sys.stdout.flush()
 
-def main():
+def oldmain():
     global LAST_MSG
 
     try:
@@ -160,4 +173,86 @@ def main():
             clearscr()
             say('All done! You did it!')
 
-main()
+class Screen():
+    def __init__(self, window):
+        self.window = window
+        curses.init_pair(_COLOR_NORMAL, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        curses.init_pair(_COLOR_INVERSE, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(_COLOR_RED, curses.COLOR_BLACK, curses.COLOR_RED)
+        curses.init_pair(_COLOR_GREEN, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(_COLOR_BLUE, curses.COLOR_BLUE, curses.COLOR_BLACK)
+
+    def refresh(self):
+        self.window.refresh()
+
+    def header(self):
+        (_, max_x) = self.window.getmaxyx()
+        for row in range(0, 3):
+            self.window.addstr(row, 0, ' ' * max_x, curses.color_pair(_COLOR_INVERSE))
+        pos_x = int( (max_x / 2) - (len(_TITLE) / 2) )
+        self.window.addstr(1, pos_x, _TITLE, curses.color_pair(_COLOR_INVERSE))
+
+    def footer(self):
+        (max_y, max_x) = self.window.getmaxyx()
+        for row in range(max_y - 4, max_y - 1):
+            self.window.addstr(row, 0, ' ' * max_x, curses.color_pair(_COLOR_INVERSE))
+        pos_x = 2
+        date = datetime.datetime.now().strftime('%Y-%m-%d')
+        self.window.addstr(max_y - 3, pos_x, date, curses.color_pair(_COLOR_INVERSE))
+        pos_x = max_x - len(_VERSION) - 2
+        self.window.addstr(max_y - 3, pos_x, _VERSION, curses.color_pair(_COLOR_INVERSE))
+
+    def clear(self):
+        (max_y, _) = self.window.getmaxyx()
+        for row in range(3, max_y - 5):
+            self.window.move(row, 0)
+            self.window.clrtoeol()
+
+    def number(self, number, start_y=5, start_x=5):
+        config = characters.numbers(number)
+
+        row_num = start_y
+
+        for row in config:
+            col_num = start_x
+
+            for column in row:
+                if column == ' ':
+                    color = curses.color_pair(_COLOR_NORMAL)
+                elif column == 'X':
+                    color = curses.color_pair(_COLOR_RED)
+
+                self.window.addstr(row_num, col_num, ' ', color)
+
+                col_num += 1
+
+            row_num += 1
+
+    def key(self):
+        return(self.window.getch())
+
+def main(window):
+    screen = Screen(window)
+    screen.header()
+    screen.footer()
+    for number in range(0, 10):
+        screen.number(number)
+        screen.refresh()
+        time.sleep(2)
+    k = screen.key()
+
+# oldmain()
+
+for number in range(0, 10):
+    config = characters.numbers(number)
+    if len(config) != 9:
+        print('error in number %d: invalid number of rows (%d)' % (number, len(config)))
+    for row in config:
+        if len(row) != 9:
+            print('error in number %d: invalid number of columns (%d)' % (number, len(row)))
+
+#sys.exit()
+
+curses.wrapper(main)
+
+sys.exit(0)
