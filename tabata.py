@@ -11,14 +11,16 @@ import time
 
 import characters
 
-_COLOR_NORMAL = 1
-_COLOR_INVERSE = 2
-_COLOR_RED = 3
-_COLOR_GREEN = 4
-_COLOR_BLUE = 5
+_COLOR_HEADER = 10
 
-_TITLE = 'TABATA TIMER'
-_VERSION = 'Version 2.0.0'
+_COLOR_STATUS = 20
+
+_COLOR_CLOCK_BG = 30
+_COLOR_CLOCK_NORMAL = 31
+_COLOR_CLOCK_RED = 32
+
+_TITLE = 'TABATA'
+_VERSION = 'V2.0.0'
 
 LAST_MSG = ""
 
@@ -47,12 +49,8 @@ def run(cmd):
 def clearscr():
     run('clear')
 
-def say(msg, newline=True):
-    if newline:
-        msg += '\n'
+def say(msg):
     start_time = time.time()
-    sys.stdout.write(msg)
-    sys.stdout.flush()
     cmd = 'say'+' '+msg
     run(cmd)
     end_time = time.time()
@@ -176,108 +174,149 @@ def oldmain():
 class Screen():
     def __init__(self, window):
         self.window = window
-        curses.init_pair(_COLOR_NORMAL, curses.COLOR_WHITE, curses.COLOR_BLACK)
-        curses.init_pair(_COLOR_INVERSE, curses.COLOR_BLACK, curses.COLOR_WHITE)
-        curses.init_pair(_COLOR_RED, curses.COLOR_BLACK, curses.COLOR_RED)
-        curses.init_pair(_COLOR_GREEN, curses.COLOR_GREEN, curses.COLOR_BLACK)
-        curses.init_pair(_COLOR_BLUE, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
-    def check(self):
         (max_y, max_x) = self.window.getmaxyx()
 
-        assert 15 <= max_y <= 20, 'max_y = %d' % max_y
+        assert 18 <= max_y <= 20, 'window must be between 18 and 20 rows in height'
 
-    def refresh(self):
-        self.window.refresh()
+        curses.init_pair(_COLOR_HEADER, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
-    def header(self):
-        (_, max_x) = self.window.getmaxyx()
-        row = 0
-        self.window.addstr(row, 1, ' ' * (max_x - 2), curses.color_pair(_COLOR_INVERSE))
-        pos_x = int( (max_x / 2) - (len(_TITLE) / 2) )
-        self.window.addstr(row, pos_x, _TITLE, curses.color_pair(_COLOR_INVERSE))
+        curses.init_pair(_COLOR_STATUS, curses.COLOR_BLUE, curses.COLOR_WHITE)
+
+        curses.init_pair(_COLOR_CLOCK_BG, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        curses.init_pair(_COLOR_CLOCK_NORMAL, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(_COLOR_CLOCK_RED, curses.COLOR_BLACK, curses.COLOR_RED)
+
+        self.footer()
+
+#    def refresh(self):
+#        self.window.refresh()
 
     def footer(self):
         (max_y, max_x) = self.window.getmaxyx()
-        row = max_y - 1
-#        for row in range(max_y - 3, max_y):
-#            self.window.addstr(row, 1, ' ' * (max_x-2), curses.color_pair(_COLOR_INVERSE))
-        self.window.addstr(row, 1, ' ' * (max_x - 2), curses.color_pair(_COLOR_INVERSE))
-        pos_x = 3
-        date = datetime.datetime.now().strftime('%Y-%m-%d')
-        self.window.addstr(row, pos_x, date, curses.color_pair(_COLOR_INVERSE))
-        pos_x = max_x - len(_VERSION) - pos_x
-        self.window.addstr(row, pos_x, _VERSION, curses.color_pair(_COLOR_INVERSE))
 
-    def clear(self):
-        (max_y, _) = self.window.getmaxyx()
-        for row in range(3, max_y - 5):
-            self.window.move(row, 0)
-            self.window.clrtoeol()
+        pos_y = max_y - 1
 
-    def draw_character(self, c, color=None, start_y=5, start_x=5):
-        if not color:
-            color = curses.color_pair(_COLOR_INVERSE)
+        pos_x = 1
+        self.window.addstr(pos_y, pos_x, ' ' * (max_x - 2), curses.color_pair(_COLOR_HEADER))
 
-        config = characters.characters(c)
+        pos_x += 1
+        self.window.addstr(pos_y, pos_x, _TITLE, curses.color_pair(_COLOR_HEADER))
 
-        row_num = start_y
+        pos_x = max_x - len(_VERSION) - 1
+        self.window.addstr(pos_y, pos_x, _VERSION, curses.color_pair(_COLOR_HEADER))
 
-        for row in config:
-            col_num = start_x
+    def status(self, group_num, round_num, current_item, next_item):
+        (_, max_x) = self.window.getmaxyx()
 
-            for column in row:
-                if column == ' ':
-                    pixel_color = curses.color_pair(_COLOR_NORMAL)
-                elif column == 'X':
-                    pixel_color = color
+        pos_y = 0
 
-                self.window.addstr(row_num, col_num, ' ', pixel_color)
+        pos_x = 1
+        self.window.addstr(pos_y, pos_x, ' ' * (max_x - 1), curses.color_pair(_COLOR_HEADER))
+        pos_x += 1
+        key = 'GROUP/ROUND:'
+        self.window.addstr(pos_y, pos_x, key, curses.color_pair(_COLOR_HEADER))
+        self.window.addstr(pos_y, pos_x + len(key) + 1, str(group_num) + '/' + str(round_num), curses.color_pair(_COLOR_STATUS))
 
-                col_num += 1
+        pos_y += 1
 
-            row_num += 1
+        pos_x = 1
+        self.window.addstr(pos_y, pos_x, ' ' * (max_x - 1), curses.color_pair(_COLOR_HEADER))
+        pos_x += 1
+        key = 'CURRENT ACTIVITY:'
+        self.window.addstr(pos_y, pos_x, key, curses.color_pair(_COLOR_HEADER))
+        self.window.addstr(pos_y, pos_x + len(key) + 1, current_item.upper(), curses.color_pair(_COLOR_STATUS))
 
-    def clock(self, seconds):
-        assert seconds <= 5940
+        pos_y += 1
+
+        pos_x = 1
+        self.window.addstr(pos_y, pos_x, ' ' * (max_x - 1), curses.color_pair(_COLOR_HEADER))
+        pos_x += 1
+        key = 'NEXT UP:'
+        self.window.addstr(pos_y, pos_x, key, curses.color_pair(_COLOR_HEADER))
+        self.window.addstr(pos_y, pos_x + len(key) + 1, next_item.upper(), curses.color_pair(_COLOR_STATUS))
+
+        self.window.refresh()
+
+#    def clear(self):
+#        (max_y, _) = self.window.getmaxyx()
+#        for row in range(3, max_y - 5):
+#            self.window.move(row, 0)
+#            self.window.clrtoeol()
+
+    def timer(self, seconds):
+        assert seconds <= 3600
+
+        remaining = seconds
 
         (max_y, max_x) = self.window.getmaxyx()
 
-        pos_y = int( (max_y / 2) - (characters.height / 2) )
+        pos_y = int( (max_y / 2) - (characters.height / 2) ) + 1
 
-        while seconds:
-            time_str = "%.2d:%.2d" % (int(seconds / 60), seconds % 60)
+        while remaining:
+            time_str = "%.2d:%.2d" % (int(remaining / 60), remaining % 60)
 
-            if seconds <= 10:
-                color = curses.color_pair(_COLOR_RED)
+            if remaining <= 10:
+                color = curses.color_pair(_COLOR_CLOCK_RED)
             else:
-                color = curses.color_pair(_COLOR_INVERSE)
+                color = curses.color_pair(_COLOR_CLOCK_NORMAL)
 
             pos_x = int( (max_x / 2) - (len(time_str) * characters.spacing / 2) )
 
             for c in time_str:
-                self.draw_character(c, start_y=pos_y, start_x=pos_x, color=color)
+                self._draw_character(c, color, start_y=pos_y, start_x=pos_x)
                 pos_x += characters.spacing
 
-            self.window.move(max_y-1, max_x-1)
+            self.window.move(max_y - 1, max_x - 1)
 
-            self.refresh()
+            self.window.refresh()
 
-            seconds -= 1
+            if remaining <= 5:
+                cmd_time = say(str(remaining))
+            elif remaining == 30 and seconds >= 60:
+                cmd_time = say(str(remaining) + ' seconds')
+            else:
+                cmd_time = 0
 
-            time.sleep(1)
+            remaining -= 1
 
-    def key(self):
+            k = self.key(0)
+            if k == ord('p'):
+                self.key()
+            time.sleep(max(0, 1 - cmd_time))
+
+    def _draw_character(self, c, color, start_y=5, start_x=5):
+        config = characters.characters(c)
+
+        pos_y = start_y
+
+        for row in config:
+            pos_x = start_x
+
+            for column in row:
+                if column == ' ':
+                    pixel_color = curses.color_pair(_COLOR_CLOCK_BG)
+                elif column == 'X':
+                    pixel_color = color
+
+                self.window.addstr(pos_y, pos_x, ' ', pixel_color)
+
+                pos_x += 1
+
+            pos_y += 1
+
+    def key(self, timeout=-1):
+        self.window.timeout(timeout)
         return(self.window.getch())
 
 def main(window):
     screen = Screen(window)
-    screen.check()
-    screen.header()
-    screen.footer()
-    screen.clock(30)
-    screen.clock(10)
-    screen.clock(5)
+
+#    screen.footer()
+
+    screen.status(1, 1, 'squats', 'modified pushups')
+
+    screen.timer(60)
 
     k = screen.key()
 
