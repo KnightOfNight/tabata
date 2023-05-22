@@ -30,20 +30,30 @@ _PROMPT = 'COMMAND : '
 LAST_MSG = ""
 
 def run(cmd, background=False):
+    debug('run: cmd="%s", background=%s' % (cmd, background))
+
     if background:
         subprocess.Popen(cmd.split(' '))
     else:
         subprocess.run(cmd.split(' '))
 
 def say(msg, background=False):
+    debug('say msg="%s", background=%s' % (msg, background))
+
     start_time = time.time()
     cmd = 'say'+' '+msg
     run(cmd, background=background)
     end_time = time.time()
+
     return end_time - start_time
+
+def debug(msg):
+    sys.stderr.write('DEBUG: %s\n' % msg)
 
 class Screen():
     def __init__(self, window):
+        debug('init Screen object')
+
         self.window = window
 
         (max_y, max_x) = self.window.getmaxyx()
@@ -75,6 +85,8 @@ class Screen():
         self.header()
 
     def header(self):
+        debug('update header')
+
         pos_y = 0
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
@@ -90,6 +102,8 @@ class Screen():
         self.window.refresh()
 
     def status(self, group_num, round_num, current_item, next_item):
+        debug('update status bar')
+
         if not group_num:
             group_num = 'NONE'
 
@@ -129,6 +143,8 @@ class Screen():
         self.prompt()
 
     def prompt(self):
+        debug('update prompt')
+
         pos_y = self.usable_last_y - 1
 
         pos_x = self.usable_start_x
@@ -140,6 +156,8 @@ class Screen():
         self.window.refresh()
 
     def footer(self):
+        debug('update footer')
+
         pos_y = self.usable_last_y
 
         pos_x = self.usable_start_x
@@ -155,6 +173,8 @@ class Screen():
 
     def timer(self, seconds):
         assert seconds <= 3600
+
+        debug('timer: seconds=%d' % (seconds))
 
         remaining = seconds
 
@@ -173,27 +193,25 @@ class Screen():
 
             self._draw_time(time_str, color, pos_y, pos_x)
 
-            cmd_time = 0
-
+            say_time = 0
             if remaining <= 5:
-                cmd_time = say(str(remaining), background=True)
+                say_time = say(str(remaining), background=True)
             elif remaining in [10, 15, 30, 60] and seconds >= 120:
-                cmd_time = say(str(remaining) + ' seconds', background=True)
+                say_time = say(str(remaining) + ' seconds', background=True)
+            debug('say_time=%.3f' % say_time)
 
-            sleep_time = max(0, 1 - cmd_time)
-
-            sys.stderr.write('DEBUG: say_time=%.3f\n' % cmd_time)
-            sys.stderr.write('DEBUG: sleep_time=%.3f\n' % sleep_time)
+            sleep_time = max(0, 1 - say_time)
+            debug('sleep_time=%.3f' % sleep_time)
 
             time.sleep(sleep_time)
 
             remaining -= 1
 
-            time_str = "%.2d:%.2d" % (int(remaining / 60), remaining % 60)
-
         self._draw_time('00:00', curses.color_pair(_COLOR_CLOCK_NORMAL), pos_y, pos_x)
 
     def _draw_time(self, time_str, color, y, x):
+        debug('_draw_time: time_str="%s", color="%s", y=%d, x=%d' % (time_str, color, y, x))
+
         for c in time_str:
             self._draw_character(c, color, y, x)
             x += characters.spacing
@@ -201,6 +219,8 @@ class Screen():
         self.prompt()
 
     def _draw_character(self, c, color, y, start_x):
+        debug('_draw_character: c="%s", color="%s", y=%d, x=%d' % (c, color, y, start_x))
+
         config = characters.characters(c)
         for row in config:
             x = start_x
@@ -214,6 +234,8 @@ class Screen():
             y += 1
 
     def key(self, timeout=-1, msg=None):
+        debug('key: timeout=%.3f, msg="%s"' % (timeout, msg))
+
         self.window.timeout(timeout)
         if msg:
             (y, x) = self.window.getyx()
@@ -221,10 +243,12 @@ class Screen():
         return(self.window.getch())
 
 class Routine():
-    def __init__(self):
+    def __init__(self, file):
+        debug('init Routine object')
+
         try:
             print('loading JSON')
-            with open('tabata.json', 'r') as f:
+            with open(file, 'r') as f:
                 routine = json.load(f)
         except FileNotFoundError:
             print('ERROR: file "tabata.json" not found')
@@ -251,6 +275,8 @@ class Routine():
         self.rest_between_groups = 'rest between groups'
 
     def next_item_in_group(self, dogroup, doround, doitem):
+        debug('next_item_in_group: dogroup=%d, doround=%d, doitem=%d' % (dogroup, doround, doitem))
+
         if doitem < self._last_item_in_group(dogroup):
             next_item = self.groups[dogroup][doitem + 1]['name']
         elif doround < self.last_round:
@@ -262,9 +288,13 @@ class Routine():
         return next_item
 
     def _last_item_in_group(self, dogroup):
+        debug('_last_item_in_group: dogroup=%d' % (dogroup))
+
         return len(self.groups[dogroup]) - 1
 
     def next_item_after_rest(self, dogroup, rest):
+        debug('next_item_after_rest: dogroup=%d, rest="%s"' % (dogroup, rest))
+
         if rest == self.rest_between_rounds:
             next_item = self.groups[dogroup][0]['name']
         elif rest == self.rest_between_groups:
@@ -272,12 +302,14 @@ class Routine():
         return next_item
 
 def main(window):
-    routine = Routine()
+    routine = Routine('tabata.json')
 
     screen = Screen(window)
     screen.status(0, 0, '', '')
     screen.timer(0)
-    screen.key(msg='(hit any key to start)')
+    msg = 'hit any key to start'
+    say(msg, background=True)
+    screen.key(msg='(%s)' % (msg))
 
     msg = 'Starting in %d seconds. Get ready for %s!' % (routine.start_time, routine.first_exercise)
     screen.status(1, 1, 'get ready to start', routine.first_exercise)
@@ -322,7 +354,7 @@ def main(window):
                 next_item = routine.next_item_after_rest(dogroup, rest)
                 screen.status(dogroup + 1, doround + 1, rest, next_item)
                 msg = 'Rest! Get ready for %s!' % (next_item)
-                say(msg, background=False)
+                say(msg, background=True)
                 screen.timer(routine.round_rest_time)
 
         if dogroup < routine.last_group:
@@ -330,15 +362,17 @@ def main(window):
             next_item = routine.next_item_after_rest(dogroup, rest)
             screen.status(dogroup + 1, doround + 1, rest, next_item)
             msg = 'Rest! Hydrate! Get ready for %s!' % (next_item)
-            say(msg, background=False)
+            say(msg, background=True)
             screen.timer(routine.group_rest_time)
 
     screen.status(0, 0, '', '')
     screen.timer(0)
 
-    say('Great job! You did it!', background=True)
+    say('Great job! You did it!', background=False)
 
-    screen.key(msg='(hit any key to exit)')
+    msg = 'hit any key to exit'
+    say(msg, background=True)
+    screen.key(msg='(%s)' % (msg))
 
 curses.wrapper(main)
 
