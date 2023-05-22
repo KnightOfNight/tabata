@@ -11,7 +11,7 @@
 
     "round_rest_time"  : 30,
 
-    "group_rest_time"  : 240,
+    "group_rest_time"  : 300,
 
     "groups" : [
         [
@@ -20,15 +20,15 @@
             },
 
             {
-                "type" : "rest"
+                "type" : "rest", "name" : "rest between exercises"
             },
 
             {
-                "type" : "exercise", "name" : "modified pushups"
+                "type" : "exercise", "name" : "modified push ups"
             },
 
             {
-                "type" : "rest"
+                "type" : "rest", "name" : "rest between exercises"
             },
 
             {
@@ -38,19 +38,19 @@
 
         [
             {
-                "type" : "exercise", "name" : "lunge right"
+                "type" : "exercise", "name" : "right side lunge"
             },
 
             {
-                "type" : "switch"
+                "type" : "switch", "name" : "switch sides"
             },
 
             {
-                "type" : "exercise", "name" : "lunge left"
+                "type" : "exercise", "name" : "left side lunge"
             },
 
             {
-                "type" : "rest"
+                "type" : "rest", "name" : "rest between exercises"
             },
 
             {
@@ -58,7 +58,7 @@
             },
 
             {
-                "type" : "rest"
+                "type" : "rest", "name" : "rest between exercises"
             },
 
             {
@@ -68,19 +68,19 @@
 
         [
             {
-                "type" : "exercise", "name" : "modified side plank with clamshell right"
+                "type" : "exercise", "name" : "right side modified side plank with clamshell"
             },
 
             {
-                "type" : "switch"
+                "type" : "switch", "name" : "switch sides"
             },
 
             {
-                "type" : "exercise", "name" : "modified side plank with clamshell left"
+                "type" : "exercise", "name" : "left side modified side plank with clamshell"
             },
 
             {
-                "type" : "rest"
+                "type" : "rest", "name" : "rest between exercises"
             },
 
             {
@@ -88,7 +88,7 @@
             },
 
             {
-                "type" : "rest"
+                "type" : "rest", "name" : "rest between exercises"
             },
 
             {
