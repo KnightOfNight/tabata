@@ -29,13 +29,16 @@ _PROMPT = 'COMMAND : '
 
 LAST_MSG = ""
 
-def run(cmd):
-    subprocess.run(cmd.split(' '))
+def run(cmd, background=False):
+    if background:
+        subprocess.Popen(cmd.split(' '))
+    else:
+        subprocess.run(cmd.split(' '))
 
-def say(msg):
+def say(msg, background=False):
     start_time = time.time()
     cmd = 'say'+' '+msg
-    run(cmd)
+    run(cmd, background=background)
     end_time = time.time()
     return end_time - start_time
 
@@ -86,20 +89,6 @@ class Screen():
 
         self.window.refresh()
 
-    def footer(self):
-        pos_y = self.usable_last_y
-
-        pos_x = self.usable_start_x
-        self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_FOOTER))
-
-        pos_x += self.usable_offset
-        self.window.addstr(pos_y, pos_x, _TITLE, curses.color_pair(_COLOR_FOOTER))
-
-        pos_x = self.usable_last_x - len(_VERSION) - self.usable_offset
-        self.window.addstr(pos_y, pos_x, _VERSION, curses.color_pair(_COLOR_FOOTER))
-
-        self.window.refresh()
-
     def status(self, group_num, round_num, current_item, next_item):
         if not group_num:
             group_num = 'NONE'
@@ -117,30 +106,30 @@ class Screen():
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
         pos_x += self.usable_offset
-        key = 'GROUP/ROUND :'
-        self.window.addstr(pos_y, pos_x, key, curses.color_pair(_COLOR_HEADER))
-        self.window.addstr(pos_y, pos_x + len(key) + 1, str(group_num) + '/' + str(round_num), curses.color_pair(_COLOR_STATUS))
+        text = 'GROUP/ROUND :'
+        self.window.addstr(pos_y, pos_x, text, curses.color_pair(_COLOR_HEADER))
+        self.window.addstr(pos_y, pos_x + len(text) + 1, str(group_num) + '/' + str(round_num), curses.color_pair(_COLOR_STATUS))
 
         pos_y += 1
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
         pos_x += self.usable_offset
-        key = 'CURRENT ACTIVITY :'
-        self.window.addstr(pos_y, pos_x, key, curses.color_pair(_COLOR_HEADER))
-        self.window.addstr(pos_y, pos_x + len(key) + 1, current_item.upper(), curses.color_pair(_COLOR_STATUS))
+        text = 'CURRENT ACTIVITY :'
+        self.window.addstr(pos_y, pos_x, text, curses.color_pair(_COLOR_HEADER))
+        self.window.addstr(pos_y, pos_x + len(text) + 1, current_item.upper(), curses.color_pair(_COLOR_STATUS))
 
         pos_y += 1
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
         pos_x += self.usable_offset
-        key = 'NEXT UP :'
-        self.window.addstr(pos_y, pos_x, key, curses.color_pair(_COLOR_HEADER))
-        self.window.addstr(pos_y, pos_x + len(key) + 1, next_item.upper(), curses.color_pair(_COLOR_STATUS))
+        text = 'NEXT UP :'
+        self.window.addstr(pos_y, pos_x, text, curses.color_pair(_COLOR_HEADER))
+        self.window.addstr(pos_y, pos_x + len(text) + 1, next_item.upper(), curses.color_pair(_COLOR_STATUS))
 
         self.prompt()
 
     def prompt(self):
-        pos_y = self.usable_last_y
+        pos_y = self.usable_last_y - 1
 
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_PROMPT))
@@ -150,17 +139,33 @@ class Screen():
 
         self.window.refresh()
 
+    def footer(self):
+        pos_y = self.usable_last_y
+
+        pos_x = self.usable_start_x
+        self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_FOOTER))
+
+        pos_x += self.usable_offset
+        self.window.addstr(pos_y, pos_x, _TITLE, curses.color_pair(_COLOR_FOOTER))
+
+        pos_x = self.usable_last_x - len(_VERSION) - self.usable_offset
+        self.window.addstr(pos_y, pos_x, _VERSION, curses.color_pair(_COLOR_FOOTER))
+
+        self.window.refresh()
+
     def timer(self, seconds):
         assert seconds <= 3600
 
         remaining = seconds
 
-        time_str = "%.2d:%.2d" % (int(remaining / 60), remaining % 60)
+        time_str_len = 5
 
         pos_y = int( (self.height / 2) - (characters.height / 2) ) + 2
-        pos_x = int( (self.width / 2) - (len(time_str) * characters.spacing / 2) )
+        pos_x = int( (self.width / 2) - (time_str_len * characters.spacing / 2) )
 
         while remaining:
+            time_str = "%.2d:%.2d" % (int(remaining / 60), remaining % 60)
+
             if remaining <= 10:
                 color = curses.color_pair(_COLOR_CLOCK_RED)
             else:
@@ -171,9 +176,9 @@ class Screen():
             cmd_time = 0
 
             if remaining <= 5:
-                cmd_time = say(str(remaining))
+                cmd_time = say(str(remaining), background=True)
             elif remaining in [10, 15, 30, 60] and seconds >= 120:
-                cmd_time = say(str(remaining) + ' seconds')
+                cmd_time = say(str(remaining) + ' seconds', background=True)
 
             sleep_time = max(0, 1 - cmd_time)
 
@@ -186,7 +191,7 @@ class Screen():
 
             time_str = "%.2d:%.2d" % (int(remaining / 60), remaining % 60)
 
-        self._draw_time('     ', curses.color_pair(_COLOR_CLOCK_NORMAL), pos_y, pos_x)
+        self._draw_time('00:00', curses.color_pair(_COLOR_CLOCK_NORMAL), pos_y, pos_x)
 
     def _draw_time(self, time_str, color, y, x):
         for c in time_str:
@@ -208,8 +213,11 @@ class Screen():
                 x += 1
             y += 1
 
-    def key(self, timeout=-1):
+    def key(self, timeout=-1, msg=None):
         self.window.timeout(timeout)
+        if msg:
+            (y, x) = self.window.getyx()
+            self.window.addstr(y, x, msg)
         return(self.window.getch())
 
 class Routine():
@@ -243,7 +251,7 @@ class Routine():
         self.rest_between_groups = 'rest between groups'
 
     def next_item_in_group(self, dogroup, doround, doitem):
-        if doitem < self.last_item(dogroup):
+        if doitem < self._last_item_in_group(dogroup):
             next_item = self.groups[dogroup][doitem + 1]['name']
         elif doround < self.last_round:
             next_item = self.rest_between_rounds
@@ -253,6 +261,9 @@ class Routine():
             next_item = 'none'
         return next_item
 
+    def _last_item_in_group(self, dogroup):
+        return len(self.groups[dogroup]) - 1
+
     def next_item_after_rest(self, dogroup, rest):
         if rest == self.rest_between_rounds:
             next_item = self.groups[dogroup][0]['name']
@@ -260,21 +271,17 @@ class Routine():
             next_item = self.groups[dogroup + 1][0]['name']
         return next_item
 
-    def last_item(self, dogroup):
-        return len(self.groups[dogroup]) - 1
-
 def main(window):
     routine = Routine()
 
     screen = Screen(window)
     screen.status(0, 0, '', '')
-    screen.key()
-
-    # opening screen needed with "hit any key to begin"
+    screen.timer(0)
+    screen.key(msg='(hit any key to start)')
 
     msg = 'Starting in %d seconds. Get ready for %s!' % (routine.start_time, routine.first_exercise)
     screen.status(1, 1, 'get ready to start', routine.first_exercise)
-    say(msg)
+    say(msg, background=True)
     screen.timer(routine.start_time)
 
     for dogroup in range(0, routine.num_groups):
@@ -291,42 +298,47 @@ def main(window):
                 if item_type == 'exercise':
                     item_time = item.get('time', routine.default_item_time)
                     msg = '%s for %d seconds. START!' % (item_name, item_time)
+                    background = False
 
                 elif item_type == 'rest':
                     item_time = item.get('time', routine.default_rest_time)
-                    msg = '%s for %d seconds. Get ready for %s!' % (item_name.capitalize(), item_time, next_item)
+                    msg = 'Rest! Get ready for %s!' % (next_item)
+                    background = True
 
                 elif item_type == 'switch':
                     item_time = item.get('time', routine.default_switch_time)
-                    msg = '%s for %d seconds. Get ready for %s!' % (item_name.capitalize(), item_time, next_item)
+                    msg = 'Switch sides! Get ready for %s!' % (next_item)
+                    background = True
 
                 else:
                     raise ValueError('invalid item type "%s"' % item_type)
     
                 screen.status(dogroup + 1, doround + 1, item_name, next_item)
-                say(msg)
+                say(msg, background=background)
                 screen.timer(item_time)
 
             if doround < routine.last_round:
                 rest = routine.rest_between_rounds
                 next_item = routine.next_item_after_rest(dogroup, rest)
                 screen.status(dogroup + 1, doround + 1, rest, next_item)
-                msg = '%s for %d seconds. Get ready for %s!' % (rest.capitalize(), routine.round_rest_time, next_item)
-                say(msg)
+                msg = 'Rest! Get ready for %s!' % (next_item)
+                say(msg, background=False)
                 screen.timer(routine.round_rest_time)
 
         if dogroup < routine.last_group:
             rest = routine.rest_between_groups
             next_item = routine.next_item_after_rest(dogroup, rest)
             screen.status(dogroup + 1, doround + 1, rest, next_item)
-            msg = '%s for %d seconds. Hydrate! Get ready for %s!' % (rest.capitalize(), routine.group_rest_time, next_item)
-            say(msg)
+            msg = 'Rest! Hydrate! Get ready for %s!' % (next_item)
+            say(msg, background=False)
             screen.timer(routine.group_rest_time)
 
     screen.status(0, 0, '', '')
-    screen.key()
+    screen.timer(0)
 
-# oldmain()
+    say('Great job! You did it!', background=True)
+
+    screen.key(msg='(hit any key to exit)')
 
 curses.wrapper(main)
 
