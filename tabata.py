@@ -25,7 +25,7 @@ _COLOR_PROMPT = 40
 
 _TITLE = 'TABATA TIMER'
 _VERSION = 'V2.0.0'
-_PROMPT = 'COMMAND: '
+_PROMPT = 'COMMAND : '
 
 LAST_MSG = ""
 
@@ -45,7 +45,7 @@ class Screen():
 
         (max_y, max_x) = self.window.getmaxyx()
 
-        assert max_y == 22, 'window must be between 22 rows high, currently %d rows' % max_y
+        assert max_y == 22, 'window must be 22 rows high, currently %d rows' % max_y
 
         curses.init_pair(_COLOR_HEADER, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
