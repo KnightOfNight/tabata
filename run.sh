@@ -1,3 +1,6 @@
 #!/bin/bash
 
-./tabata.py 2>>tabata.log
+log="tabata.log"
+if ! ./tabata.py 2>>$log; then
+    tail -25 $log
+fi
