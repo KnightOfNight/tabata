@@ -58,6 +58,9 @@ class Screen():
 
         (max_y, max_x) = self.window.getmaxyx()
 
+        debug('max_y=%d' % (max_y))
+        debug('max_x=%d' % (max_x))
+
         assert max_y == 22, 'window must be 22 rows high, currently %d rows' % max_y
 
         curses.init_pair(_COLOR_HEADER, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -309,7 +312,7 @@ def main(window):
     screen.timer(0)
     msg = 'hit any key to start'
     say(msg, background=True)
-    screen.key(msg='(%s)' % (msg))
+    screen.key(msg='(%s) ' % (msg))
 
     msg = 'Starting in %d seconds. Get ready for %s!' % (routine.start_time, routine.first_exercise)
     screen.status(1, 1, 'get ready to start', routine.first_exercise)
@@ -372,7 +375,7 @@ def main(window):
 
     msg = 'hit any key to exit'
     say(msg, background=True)
-    screen.key(msg='(%s)' % (msg))
+    screen.key(msg='(%s) ' % (msg))
 
 curses.wrapper(main)
 
