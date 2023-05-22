@@ -1,0 +1,53 @@
+{
+    "start_time"       : 10,
+
+    "item_time"        : 5,
+
+    "item_rest_time"   : 10,
+
+    "item_switch_time" : 10,
+
+    "rounds"           : 2,
+
+    "round_rest_time"  : 10,
+
+    "group_rest_time"  : 10,
+
+    "groups" : [
+        [
+            {
+                "type" : "exercise", "name" : "squats"
+            },
+
+            {
+                "type" : "rest", "name" : "rest between exercises"
+            },
+
+            {
+                "type" : "exercise", "name" : "modified push ups"
+            }
+        ],
+
+        [
+            {
+                "type" : "exercise", "name" : "right side lunge"
+            },
+
+            {
+                "type" : "switch", "name" : "switch sides"
+            },
+
+            {
+                "type" : "exercise", "name" : "left side lunge"
+            },
+
+            {
+                "type" : "rest", "name" : "rest between exercises"
+            },
+
+            {
+                "type" : "exercise", "name" : "behind the back pull aparts"
+            }
+        ]
+    ]
+}
