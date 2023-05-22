@@ -3,8 +3,6 @@
 import curses
 import datetime
 import json
-import math
-import signal
 import subprocess
 import sys
 import time
@@ -30,7 +28,7 @@ _PROMPT = 'COMMAND : '
 LAST_MSG = ""
 
 def run(cmd, background=False):
-    debug('run: cmd="%s", background=%s' % (cmd, background))
+    debug('run(cmd="%s",background=%s)' % (cmd, background))
 
     if background:
         subprocess.Popen(cmd.split(' '))
@@ -38,7 +36,7 @@ def run(cmd, background=False):
         subprocess.run(cmd.split(' '))
 
 def say(msg, background=False):
-    debug('say msg="%s", background=%s' % (msg, background))
+    debug('say(msg="%s",background=%s)' % (msg, background))
 
     start_time = time.time()
     cmd = 'say'+' '+msg
@@ -48,11 +46,12 @@ def say(msg, background=False):
     return end_time - start_time
 
 def debug(msg):
-    sys.stderr.write('DEBUG: %s\n' % msg)
+    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")
+    sys.stderr.write('%s DEBUG %s\n' % (timestamp, msg))
 
 class Screen():
     def __init__(self, window):
-        debug('init Screen object')
+        debug('Screen.__init__')
 
         self.window = window
 
@@ -88,7 +87,7 @@ class Screen():
         self.header()
 
     def header(self):
-        debug('update header')
+        debug('header()')
 
         pos_y = 0
         pos_x = self.usable_start_x
@@ -105,7 +104,7 @@ class Screen():
         self.window.refresh()
 
     def status(self, group_num, round_num, current_item, next_item):
-        debug('update status bar')
+        debug('status()')
 
         if not group_num:
             group_num = 'NONE'
@@ -146,7 +145,7 @@ class Screen():
         self.prompt()
 
     def prompt(self):
-        debug('update prompt')
+        debug('prompt()')
 
         pos_y = self.usable_last_y - 1
 
@@ -159,7 +158,7 @@ class Screen():
         self.window.refresh()
 
     def footer(self):
-        debug('update footer')
+        debug('footer()')
 
         pos_y = self.usable_last_y
 
@@ -175,9 +174,9 @@ class Screen():
         self.window.refresh()
 
     def timer(self, seconds):
-        assert seconds <= 3600
+        debug('timer(seconds=%d)' % (seconds))
 
-        debug('timer: seconds=%d' % (seconds))
+        assert seconds <= 5940
 
         remaining = seconds
 
@@ -213,7 +212,7 @@ class Screen():
         self._draw_time('00:00', curses.color_pair(_COLOR_CLOCK_NORMAL), pos_y, pos_x)
 
     def _draw_time(self, time_str, color, y, x):
-        debug('_draw_time: time_str="%s", color="%s", y=%d, x=%d' % (time_str, color, y, x))
+        debug('_draw_time(time_str="%s",color="%s",y=%d,x=%d)' % (time_str, color, y, x))
 
         for c in time_str:
             self._draw_character(c, color, y, x)
@@ -222,7 +221,7 @@ class Screen():
         self.prompt()
 
     def _draw_character(self, c, color, y, start_x):
-        debug('_draw_character: c="%s", color="%s", y=%d, x=%d' % (c, color, y, start_x))
+        debug('_draw_character(c="%s",color="%s",y=%d,start_x=%d' % (c, color, y, start_x))
 
         config = characters.characters(c)
         for row in config:
@@ -237,7 +236,7 @@ class Screen():
             y += 1
 
     def key(self, timeout=-1, msg=None):
-        debug('key: timeout=%.3f, msg="%s"' % (timeout, msg))
+        debug('key(timeout=%.3f,msg="%s")' % (timeout, msg))
 
         self.window.timeout(timeout)
         if msg:
@@ -247,14 +246,14 @@ class Screen():
 
 class Routine():
     def __init__(self, file):
-        debug('init Routine object')
+        debug('Routine.__init__')
 
         try:
             print('loading JSON')
             with open(file, 'r') as f:
                 routine = json.load(f)
         except FileNotFoundError:
-            print('ERROR: file "tabata.json" not found')
+            print('ERROR: file "%s" not found' % (file))
             sys.exit(1)
 
         self.start_time = routine['start_time']
@@ -278,7 +277,7 @@ class Routine():
         self.rest_between_groups = 'rest between groups'
 
     def next_item_in_group(self, dogroup, doround, doitem):
-        debug('next_item_in_group: dogroup=%d, doround=%d, doitem=%d' % (dogroup, doround, doitem))
+        debug('next_item_in_group(dogroup=%d,doround=%d,doitem=%d)' % (dogroup, doround, doitem))
 
         if doitem < self._last_item_in_group(dogroup):
             next_item = self.groups[dogroup][doitem + 1]['name']
@@ -291,12 +290,12 @@ class Routine():
         return next_item
 
     def _last_item_in_group(self, dogroup):
-        debug('_last_item_in_group: dogroup=%d' % (dogroup))
+        debug('_last_item_in_group(dogroup=%d)' % (dogroup))
 
         return len(self.groups[dogroup]) - 1
 
     def next_item_after_rest(self, dogroup, rest):
-        debug('next_item_after_rest: dogroup=%d, rest="%s"' % (dogroup, rest))
+        debug('next_item_after_rest(dogroup=%d,rest="%s")' % (dogroup, rest))
 
         if rest == self.rest_between_rounds:
             next_item = self.groups[dogroup][0]['name']
