@@ -22,13 +22,13 @@ _COLOR_CLOCK_RED = 32
 _COLOR_PROMPT = 40
 
 _TITLE = 'TABATA TIMER'
-_VERSION = 'V2.0.0'
+_VERSION = 'V3.0.0'
 _PROMPT = 'COMMAND : '
 
 LAST_MSG = ""
 
 def run(cmd, background=False):
-    debug('run(cmd="%s",background=%s)' % (cmd, background))
+    debug('run(cmd="%s", background=%s)' % (cmd, background))
 
     if background:
         subprocess.Popen(cmd.split(' '))
@@ -36,7 +36,7 @@ def run(cmd, background=False):
         subprocess.run(cmd.split(' '))
 
 def say(msg, background=False):
-    debug('say(msg="%s",background=%s)' % (msg, background))
+    debug('say(msg="%s", background=%s)' % (msg, background))
 
     start_time = time.time()
     cmd = 'say'+' '+msg
@@ -104,7 +104,7 @@ class Screen():
         self.window.refresh()
 
     def status(self, set_idx, circuit_num, current_interval, next_interval):
-        debug('status()')
+        debug('status(set_idx=%d, circuit_num=%d, current_interval=%s, next_interval=%s)' % (set_idx, circuit_num, current_interval, next_interval))
 
         if set_idx is not None:
             set_num_str = str(set_idx + 1)
@@ -222,7 +222,7 @@ class Screen():
         self._draw_time('00:00', curses.color_pair(_COLOR_CLOCK_NORMAL), pos_y, pos_x)
 
     def _draw_time(self, time_str, color, y, x):
-        debug('_draw_time(time_str="%s",color="%s",y=%d,x=%d)' % (time_str, color, y, x))
+        debug('_draw_time(time_str="%s", color="%s", y=%d, x=%d)' % (time_str, color, y, x))
 
         for c in time_str:
             self._draw_character(c, color, y, x)
@@ -231,7 +231,7 @@ class Screen():
         self.prompt()
 
     def _draw_character(self, c, color, y, start_x):
-        debug('_draw_character(c="%s",color="%s",y=%d,start_x=%d' % (c, color, y, start_x))
+        debug('_draw_character(c="%s", color="%s", y=%d, start_x=%d' % (c, color, y, start_x))
 
         config = characters.characters(c)
         for row in config:
@@ -246,7 +246,7 @@ class Screen():
             y += 1
 
     def key(self, timeout=-1, msg=None):
-        debug('key(timeout=%.3f,msg="%s")' % (timeout, msg))
+        debug('key(timeout=%.3f, msg="%s")' % (timeout, msg))
 
         self.window.timeout(timeout)
         if msg:
@@ -286,7 +286,7 @@ class Workout():
         self.rest_between_sets = 'rest between sets'
 
     def next_interval_in_circuit(self, set_idx, circuit_num, interval_idx):
-        debug('next_interval_in_circuit(set_idx=%d,circuit_num=%d,interval_idx=%d)' % (set_idx, circuit_num, interval_idx))
+        debug('next_interval_in_circuit(set_idx=%d, circuit_num=%d, interval_idx=%d)' % (set_idx, circuit_num, interval_idx))
 
         if interval_idx < self._last_interval_in_circuit(set_idx):
             next_interval = self.circuits[set_idx][interval_idx + 1]['name']
@@ -308,7 +308,7 @@ class Workout():
         return len(self.circuits[set_idx]) - 1
 
     def next_interval_after_rest(self, set_idx, rest):
-        debug('next_interval_after_rest(set_idx=%d,rest="%s")' % (set_idx, rest))
+        debug('next_interval_after_rest(set_idx=%d, rest="%s")' % (set_idx, rest))
 
         if rest == self.rest_between_circuits:
             next_interval = self.circuits[set_idx][0]['name']
@@ -333,9 +333,7 @@ def main(window):
     say(msg, background=True)
     screen.timer(workout.start_time)
 
-    for set_idx in range(0, workout.sets_per_workout):
-
-        circuit = workout.circuits[set_idx]
+    for (set_idx, curcuit in enumerate(workout.circuits):
 
         for circuit_num in range(1, workout.circuits_per_set + 1):
 
