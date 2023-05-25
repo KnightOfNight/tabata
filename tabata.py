@@ -319,7 +319,7 @@ class Workout():
         return next_interval
 
 def main(window):
-    workout = Workout('test.json')
+    workout = Workout('tabata.json')
 
     screen = Screen(window)
     screen.status(None, None, '', '')
