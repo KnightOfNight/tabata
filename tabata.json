@@ -1,26 +1,24 @@
 {
-    "start_time"       : 30,
+    "start_time"             : 30,
 
-    "item_time"        : 30,
+    "interval_exercise_time" : 30,
 
-    "item_rest_time"   : 30,
+    "interval_rest_time"     : 30,
 
-    "item_switch_time" : 10,
+    "interval_switch_time"   : 10,
 
-    "rounds"           : 3,
+    "circuits_per_set"       : 3,
 
-    "round_rest_time"  : 30,
+    "set_rest_time"          : 300,
 
-    "group_rest_time"  : 300,
-
-    "groups" : [
+    "circuits" : [
         [
             {
                 "type" : "exercise", "name" : "squats"
             },
 
             {
-                "type" : "rest", "name" : "rest between exercises"
+                "type" : "rest", "name" : "rest between intervals"
             },
 
             {
@@ -28,7 +26,7 @@
             },
 
             {
-                "type" : "rest", "name" : "rest between exercises"
+                "type" : "rest", "name" : "rest between intervals"
             },
 
             {
@@ -38,7 +36,7 @@
 
         [
             {
-                "type" : "exercise", "name" : "right side lunge"
+                "type" : "exercise", "name" : "lunge"
             },
 
             {
@@ -46,19 +44,19 @@
             },
 
             {
-                "type" : "exercise", "name" : "left side lunge"
+                "type" : "exercise", "name" : "lunge"
             },
 
             {
-                "type" : "rest", "name" : "rest between exercises"
+                "type" : "rest", "name" : "rest between intervals"
             },
 
             {
-                "type" : "exercise", "name" : "behind the back pull aparts"
+                "type" : "exercise", "name" : "behind-the-back pull-aparts"
             },
 
             {
-                "type" : "rest", "name" : "rest between exercises"
+                "type" : "rest", "name" : "rest between intervals"
             },
 
             {
@@ -68,7 +66,7 @@
 
         [
             {
-                "type" : "exercise", "name" : "right side modified side plank with clamshell"
+                "type" : "exercise", "name" : "modified side plank with clamshell"
             },
 
             {
@@ -76,11 +74,11 @@
             },
 
             {
-                "type" : "exercise", "name" : "left side modified side plank with clamshell"
+                "type" : "exercise", "name" : "modified side plank with clamshell"
             },
 
             {
-                "type" : "rest", "name" : "rest between exercises"
+                "type" : "rest", "name" : "rest between intervals"
             },
 
             {
@@ -88,7 +86,7 @@
             },
 
             {
-                "type" : "rest", "name" : "rest between exercises"
+                "type" : "rest", "name" : "rest between intervals"
             },
 
             {

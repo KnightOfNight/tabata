@@ -103,44 +103,48 @@ class Screen():
 
         self.window.refresh()
 
-    def status(self, group_num, round_num, current_item, next_item):
+    def status(self, set_idx, circuit_num, current_interval, next_interval):
         debug('status()')
 
-        if not group_num:
-            group_num = 'NONE'
+        if set_idx is not None:
+            set_num_str = str(set_idx + 1)
+        else:
+            set_num_str = 'NONE'
 
-        if not round_num:
-            round_num = 'NONE'
+        if circuit_num is not None:
+            circuit_num_str = str(circuit_num)
+        else:
+            circuit_num_str = 'NONE'
 
-        if not current_item:
-            current_item = 'none'
+        if not current_interval:
+            current_interval = 'none'
 
-        if not next_item:
-            next_item = 'none'
+        if not next_interval:
+            next_interval = 'none'
 
         pos_y = 2
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
         pos_x += self.usable_offset
-        text = 'GROUP/ROUND :'
+        text = 'SET/CIRCUIT :'
         self.window.addstr(pos_y, pos_x, text, curses.color_pair(_COLOR_HEADER))
-        self.window.addstr(pos_y, pos_x + len(text) + 1, str(group_num) + '/' + str(round_num), curses.color_pair(_COLOR_STATUS))
+        self.window.addstr(pos_y, pos_x + len(text) + 1, set_num_str + '/' + circuit_num_str, curses.color_pair(_COLOR_STATUS))
 
         pos_y += 1
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
         pos_x += self.usable_offset
-        text = 'CURRENT ACTIVITY :'
+        text = 'CURRENT INTERVAL :'
         self.window.addstr(pos_y, pos_x, text, curses.color_pair(_COLOR_HEADER))
-        self.window.addstr(pos_y, pos_x + len(text) + 1, current_item.upper(), curses.color_pair(_COLOR_STATUS))
+        self.window.addstr(pos_y, pos_x + len(text) + 1, current_interval.upper(), curses.color_pair(_COLOR_STATUS))
 
         pos_y += 1
         pos_x = self.usable_start_x
         self.window.addstr(pos_y, pos_x, ' ' * self.usable_width, curses.color_pair(_COLOR_HEADER))
         pos_x += self.usable_offset
-        text = 'NEXT UP :'
+        text = 'NEXT INTERVAL :'
         self.window.addstr(pos_y, pos_x, text, curses.color_pair(_COLOR_HEADER))
-        self.window.addstr(pos_y, pos_x + len(text) + 1, next_item.upper(), curses.color_pair(_COLOR_STATUS))
+        self.window.addstr(pos_y, pos_x + len(text) + 1, next_interval.upper(), curses.color_pair(_COLOR_STATUS))
 
         self.prompt()
 
@@ -173,7 +177,7 @@ class Screen():
 
         self.window.refresh()
 
-    def timer(self, seconds):
+    def timer(self, seconds, additional_messages=None):
         debug('timer(seconds=%d)' % (seconds))
 
         assert seconds <= 5940
@@ -196,10 +200,16 @@ class Screen():
             self._draw_time(time_str, color, pos_y, pos_x)
 
             say_time = 0
+
             if remaining <= 5:
                 say_time = say(str(remaining), background=True)
-            elif remaining in [10, 15, 30, 60] and seconds >= 120:
-                say_time = say(str(remaining) + ' seconds', background=True)
+
+            elif additional_messages and remaining in additional_messages:
+                msg = '%d seconds.' % (remaining)
+                if additional_messages[remaining]:
+                    msg += ' %s' % (additional_messages[remaining])
+                say_time = say(msg, background=True)
+
             debug('say_time=%.3f' % say_time)
 
             sleep_time = max(0, 1 - say_time)
@@ -244,136 +254,146 @@ class Screen():
             self.window.addstr(y, x, msg)
         return(self.window.getch())
 
-class Routine():
+class Workout():
     def __init__(self, file):
-        debug('Routine.__init__')
+        debug('Workout.__init__')
 
         try:
             print('loading JSON')
             with open(file, 'r') as f:
-                routine = json.load(f)
+                workout = json.load(f)
         except FileNotFoundError:
             print('ERROR: file "%s" not found' % (file))
             sys.exit(1)
 
-        self.start_time = routine['start_time']
+        self.start_time = workout['start_time']
 
-        self.default_item_time = routine['item_time']
-        self.default_rest_time = routine['item_rest_time']
-        self.default_switch_time = routine['item_switch_time']
+        self.interval_exercise_time = workout['interval_exercise_time']
+        self.interval_rest_time = workout['interval_rest_time']
+        self.interval_switch_time = workout['interval_switch_time']
 
-        self.num_rounds = routine['rounds']
-        self.last_round = routine['rounds'] - 1
-        self.round_rest_time = routine['round_rest_time']
+        self.circuits_per_set = workout['circuits_per_set']
 
-        self.groups = routine['groups']
-        self.num_groups = len(self.groups)
-        self.last_group = len(self.groups) - 1
-        self.group_rest_time = routine['group_rest_time']
+        self.circuits = workout['circuits']
 
-        self.first_exercise = self.groups[0][0]['name']
+        self.sets_per_workout = len(self.circuits)
+        self.set_last_idx = self.sets_per_workout - 1
+        self.set_rest_time = workout['set_rest_time']
 
-        self.rest_between_rounds = 'rest between rounds'
-        self.rest_between_groups = 'rest between groups'
+        self.first_interval = self.circuits[0][0]['name']
 
-    def next_item_in_group(self, dogroup, doround, doitem):
-        debug('next_item_in_group(dogroup=%d,doround=%d,doitem=%d)' % (dogroup, doround, doitem))
+        self.rest_between_circuits = 'rest between circuits'
+        self.rest_between_sets = 'rest between sets'
 
-        if doitem < self._last_item_in_group(dogroup):
-            next_item = self.groups[dogroup][doitem + 1]['name']
-        elif doround < self.last_round:
-            next_item = self.rest_between_rounds
-        elif dogroup < self.last_group:
-            next_item = self.rest_between_groups
+    def next_interval_in_circuit(self, set_idx, circuit_num, interval_idx):
+        debug('next_interval_in_circuit(set_idx=%d,circuit_num=%d,interval_idx=%d)' % (set_idx, circuit_num, interval_idx))
+
+        if interval_idx < self._last_interval_in_circuit(set_idx):
+            next_interval = self.circuits[set_idx][interval_idx + 1]['name']
+
+        elif circuit_num < self.circuits_per_set:
+            next_interval = self.rest_between_circuits
+
+        elif set_idx < self.set_last_idx:
+            next_interval = self.rest_between_sets
+
         else:
-            next_item = 'none'
-        return next_item
+            next_interval = 'none'
 
-    def _last_item_in_group(self, dogroup):
-        debug('_last_item_in_group(dogroup=%d)' % (dogroup))
+        return next_interval
 
-        return len(self.groups[dogroup]) - 1
+    def _last_interval_in_circuit(self, set_idx):
+        debug('_last_interval_in_circuit(set_idx=%d)' % (set_idx))
 
-    def next_item_after_rest(self, dogroup, rest):
-        debug('next_item_after_rest(dogroup=%d,rest="%s")' % (dogroup, rest))
+        return len(self.circuits[set_idx]) - 1
 
-        if rest == self.rest_between_rounds:
-            next_item = self.groups[dogroup][0]['name']
-        elif rest == self.rest_between_groups:
-            next_item = self.groups[dogroup + 1][0]['name']
-        return next_item
+    def next_interval_after_rest(self, set_idx, rest):
+        debug('next_interval_after_rest(set_idx=%d,rest="%s")' % (set_idx, rest))
+
+        if rest == self.rest_between_circuits:
+            next_interval = self.circuits[set_idx][0]['name']
+
+        elif rest == self.rest_between_sets:
+            next_interval = self.circuits[set_idx + 1][0]['name']
+
+        return next_interval
 
 def main(window):
-    routine = Routine('tabata.json')
+    workout = Workout('test.json')
 
     screen = Screen(window)
-    screen.status(0, 0, '', '')
+    screen.status(None, None, '', '')
     screen.timer(0)
     msg = 'hit any key to start'
     say(msg, background=True)
     screen.key(msg='(%s) ' % (msg))
 
-    msg = 'Starting in %d seconds. Get ready for %s!' % (routine.start_time, routine.first_exercise)
-    screen.status(1, 1, 'get ready to start', routine.first_exercise)
+    msg = 'Starting in %d seconds. Get ready for %s!' % (workout.start_time, workout.first_interval)
+    screen.status(None, None, 'get ready to start', workout.first_interval)
     say(msg, background=True)
-    screen.timer(routine.start_time)
+    screen.timer(workout.start_time)
 
-    for dogroup in range(0, routine.num_groups):
-        group = routine.groups[dogroup]
+    for set_idx in range(0, workout.sets_per_workout):
 
-        for doround in range(0, routine.num_rounds):
+        circuit = workout.circuits[set_idx]
 
-            for doitem in range(0, len(group)):
-                item = group[doitem]
-                item_type = item['type']
-                item_name = item['name']
-                next_item = routine.next_item_in_group(dogroup, doround, doitem)
+        for circuit_num in range(1, workout.circuits_per_set + 1):
 
-                if item_type == 'exercise':
-                    item_time = item.get('time', routine.default_item_time)
-                    msg = '%s for %d seconds. START!' % (item_name, item_time)
+            for (interval_idx, interval) in enumerate(circuit):
+                interval_type = interval['type']
+                interval_name = interval['name']
+                next_interval = workout.next_interval_in_circuit(set_idx, circuit_num, interval_idx)
+
+                if interval_type == 'exercise':
+                    interval_time = interval.get('time', workout.interval_exercise_time)
+                    msg = '%s! START!' % (interval_name)
                     background = False
 
-                elif item_type == 'rest':
-                    item_time = item.get('time', routine.default_rest_time)
-                    msg = 'Rest! Get ready for %s!' % (next_item)
+                elif interval_type == 'rest':
+                    interval_time = interval.get('time', workout.interval_rest_time)
+                    msg = 'Rest! Get ready for %s!' % (next_interval)
                     background = True
 
-                elif item_type == 'switch':
-                    item_time = item.get('time', routine.default_switch_time)
-                    msg = 'Switch sides! Get ready for %s!' % (next_item)
+                elif interval_type == 'switch':
+                    interval_time = interval.get('time', workout.interval_switch_time)
+                    msg = 'Switch sides!'
                     background = True
 
                 else:
-                    raise ValueError('invalid item type "%s"' % item_type)
+                    raise ValueError('invalid interval type "%s"' % interval_type)
     
-                screen.status(dogroup + 1, doround + 1, item_name, next_item)
+                screen.status(set_idx, circuit_num, interval_name, next_interval)
                 say(msg, background=background)
-                screen.timer(item_time)
+                screen.timer(interval_time)
 
-            if doround < routine.last_round:
-                rest = routine.rest_between_rounds
-                next_item = routine.next_item_after_rest(dogroup, rest)
-                screen.status(dogroup + 1, doround + 1, rest, next_item)
-                msg = 'Rest! Get ready for %s!' % (next_item)
+            if circuit_num < workout.circuits_per_set:
+                rest = workout.rest_between_circuits
+                next_interval = workout.next_interval_after_rest(set_idx, rest)
+                screen.status(set_idx, circuit_num, rest, next_interval)
+                msg = 'Rest! Get ready for %s!' % (next_interval)
                 say(msg, background=True)
-                screen.timer(routine.round_rest_time)
+                screen.timer(workout.interval_rest_time)
 
-        if dogroup < routine.last_group:
-            rest = routine.rest_between_groups
-            next_item = routine.next_item_after_rest(dogroup, rest)
-            screen.status(dogroup + 1, doround + 1, rest, next_item)
-            msg = 'Rest! Hydrate! Get ready for %s!' % (next_item)
+        if set_idx < workout.set_last_idx:
+            rest = workout.rest_between_sets
+            next_interval = workout.next_interval_after_rest(set_idx, rest)
+            screen.status(set_idx, circuit_num, rest, next_interval)
+            msg = 'Rest and hydrate!'
             say(msg, background=True)
-            screen.timer(routine.group_rest_time)
+            msgs = {
+                10 : '',
+                20 : '',
+                30 : 'Get ready for %s!' % (next_interval),
+                60 : '',
+            }
+            screen.timer(workout.set_rest_time, additional_messages=msgs)
 
-    screen.status(0, 0, '', '')
+    screen.status(None, None, '', '')
     screen.timer(0)
 
     say('Great job! You did it!', background=False)
 
     msg = 'hit any key to exit'
-    say(msg, background=True)
     screen.key(msg='(%s) ' % (msg))
 
 curses.wrapper(main)
