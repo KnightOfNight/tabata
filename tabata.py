@@ -104,7 +104,7 @@ class Screen():
         self.window.refresh()
 
     def status(self, set_idx, circuit_num, current_interval, next_interval):
-        debug('status(set_idx=%d, circuit_num=%d, current_interval=%s, next_interval=%s)' % (set_idx, circuit_num, current_interval, next_interval))
+        debug('status(set_idx=%s, circuit_num=%s, current_interval=%s, next_interval=%s)' % (set_idx, circuit_num, current_interval, next_interval))
 
         if set_idx is not None:
             set_num_str = str(set_idx + 1)
@@ -333,7 +333,7 @@ def main(window):
     say(msg, background=True)
     screen.timer(workout.start_time)
 
-    for (set_idx, curcuit in enumerate(workout.circuits):
+    for (set_idx, circuit) in enumerate(workout.circuits):
 
         for circuit_num in range(1, workout.circuits_per_set + 1):
 
