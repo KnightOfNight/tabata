@@ -359,7 +359,8 @@ def main(window):
     msg = 'Starting in %d seconds. Get ready for %s!' % (workout.start_time, workout.first_interval)
     screen.status(None, None, 'get ready to start', workout.first_interval)
     say(msg, background=True)
-    screen.timer(workout.start_time)
+    msgs = { 15 : '', }
+    screen.timer(workout.start_time, additional_messages=msgs)
 
     for (set_idx, circuit) in enumerate(workout.circuits):
 
