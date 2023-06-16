@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 -m pylint tabata.py
+python3 -m pylint *.py

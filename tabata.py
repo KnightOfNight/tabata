@@ -201,8 +201,8 @@ class Screen():
 
         time_str_len = 5
 
-        pos_y = int( (self.height / 2) - (characters.height / 2) ) + 2
-        pos_x = int( (self.width / 2) - (time_str_len * characters.spacing / 2) )
+        pos_y = int( (self.height / 2) - (characters.HEIGHT / 2) ) + 2
+        pos_x = int( (self.width / 2) - (time_str_len * characters.SPACING / 2) )
 
         while remaining:
             time_str = "%.2d:%.2d" % (int(remaining / 60), remaining % 60)
@@ -242,7 +242,7 @@ class Screen():
 
         for character in time_str:
             self._draw_character(character, color, row, col)
-            col += characters.spacing
+            col += characters.SPACING
 
         self.prompt()
 
@@ -251,7 +251,7 @@ class Screen():
         debug('_draw_character(c="%s", color="%s", row=%d, start_col=%d'
               % (character, color, row, start_col))
 
-        config = characters.characters(character)
+        config = characters.CHARACTERS[character]
         for line in config:
             col = start_col
             for column in line:
