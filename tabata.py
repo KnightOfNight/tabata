@@ -20,10 +20,11 @@ _COLOR_CLOCK_NORMAL = 31
 _COLOR_CLOCK_RED = 32
 
 _COLOR_PROMPT = 40
+_COLOR_PROMPT_MSG_ERROR = 41
 
 _TITLE = 'TABATA TIMER'
-_VERSION = 'V3.0.2'
-_PROMPT = 'COMMAND : '
+_VERSION = 'V3.1.0'
+_PROMPT = 'COMMAND'
 
 LAST_MSG = ""
 
@@ -79,6 +80,8 @@ class Screen():
         curses.init_pair(_COLOR_CLOCK_RED, curses.COLOR_BLACK, curses.COLOR_RED)
 
         curses.init_pair(_COLOR_PROMPT, curses.COLOR_WHITE, curses.COLOR_BLACK)
+
+        curses.init_pair(_COLOR_PROMPT_MSG_ERROR, curses.COLOR_RED, curses.COLOR_BLACK)
 
         self.height = max_y
         self.width = max_x
@@ -158,9 +161,7 @@ class Screen():
         self.window.addstr(pos_y, pos_x + len(text) + 1,
                            next_interval.upper(), curses.color_pair(_COLOR_STATUS))
 
-        self.prompt()
-
-    def prompt(self):
+    def prompt(self, help_msg=None, error_msg=None, error_msg_color=_COLOR_PROMPT):
         """Add a prompt line to the screen."""
         debug('prompt()')
 
@@ -171,8 +172,57 @@ class Screen():
 
         pos_x += self.usable_offset
         self.window.addstr(pos_y, pos_x, _PROMPT, curses.color_pair(_COLOR_PROMPT))
+        pos_x += len(_PROMPT)
+
+        if help_msg:
+            next_str = ' [' + help_msg + '] : '
+        else:
+            next_str = ' : '
+
+        self.window.addstr(pos_y, pos_x, next_str, curses.color_pair(_COLOR_PROMPT))
+        pos_x += len(next_str)
+
+        if error_msg:
+            self.window.addstr(pos_y, pos_x, error_msg, curses.color_pair(error_msg_color))
 
         self.window.refresh()
+
+    def key(self, timeout=-1, msg=None, allowed=None):
+        """Get a key from the operator."""
+        debug('key(timeout=%.3f, msg="%s", allowed="%s")' % (timeout, msg, allowed))
+
+        if msg:
+            (row, col) = self.window.getyx()
+            self.window.addstr(row, col, msg)
+
+        if allowed:
+            prompt_help = ', '.join(allowed.values())
+        else:
+            prompt_help = None
+
+        self.window.timeout(timeout)
+
+        while True:
+            self.prompt(help_msg=prompt_help)
+
+            key_code = self.window.getch()
+
+            if key_code == -1:
+                return None
+
+            key = chr(key_code)
+
+            if allowed:
+                if key in allowed:
+                    return key
+
+                self.prompt(help_msg=prompt_help, error_msg='invalid key',
+                            error_msg_color=_COLOR_PROMPT_MSG_ERROR)
+
+                time.sleep(3)
+
+            else:
+                return key
 
     def footer(self):
         """Add a footer to the screen."""
@@ -214,6 +264,11 @@ class Screen():
 
             self._draw_time(time_str, color, pos_y, pos_x)
 
+            key = self.key(timeout=0, allowed={'p':'(p)ause'})
+
+            if key == 'p':
+                key = self.key(allowed={'r':'(r)esume'})
+
             say_time = 0
 
             if remaining <= 5:
@@ -244,8 +299,6 @@ class Screen():
             self._draw_character(character, color, row, col)
             col += characters.SPACING
 
-        self.prompt()
-
     def _draw_character(self, character, color, row, start_col):
         """Draw a specific character in a time string."""
         debug('_draw_character(c="%s", color="%s", row=%d, start_col=%d'
@@ -262,16 +315,6 @@ class Screen():
                 self.window.addstr(row, col, ' ', pixel_color)
                 col += 1
             row += 1
-
-    def key(self, timeout=-1, msg=None):
-        """Get a key from the operator."""
-        debug('key(timeout=%.3f, msg="%s")' % (timeout, msg))
-
-        self.window.timeout(timeout)
-        if msg:
-            (row, col) = self.window.getyx()
-            self.window.addstr(row, col, msg)
-        return self.window.getch()
 
 class Workout():
     """Class for a workout."""
@@ -352,9 +395,9 @@ def main(window):
     screen = Screen(window)
     screen.status(None, None, '', '')
     screen.timer(0)
-    msg = 'hit any key to start'
-    say(msg, background=True)
-    screen.key(msg='(%s) ' % (msg))
+    key = screen.key(allowed={'s':'(s)tart', 'q':'(q)uit'})
+    if key == 'q':
+        return
 
     msg = 'Starting in %d seconds. Get ready for %s!' % (workout.start_time, workout.first_interval)
     screen.status(None, None, 'get ready to start', workout.first_interval)
@@ -382,9 +425,7 @@ def main(window):
                     interval_time = interval.get('time', workout.interval_rest_time)
                     msg = 'Rest! Get ready for %s!' % (next_interval)
                     background = True
-                    msgs = {
-                        15 : '',
-                    }
+                    msgs = { 15 : '', }
 
                 elif interval_type == 'switch':
                     interval_time = interval.get('time', workout.interval_switch_time)
@@ -404,9 +445,7 @@ def main(window):
                 screen.status(set_idx, circuit_num, rest, next_interval)
                 msg = 'Rest! Get ready for %s!' % (next_interval)
                 say(msg, background=True)
-                msgs = {
-                    15 : '',
-                }
+                msgs = { 15 : '', }
                 screen.timer(workout.interval_rest_time, additional_messages=msgs)
 
         if set_idx < workout.set_last_idx:
@@ -427,8 +466,7 @@ def main(window):
 
     say('Great job! You did it!', background=False)
 
-    msg = 'hit any key to exit'
-    screen.key(msg='(%s) ' % (msg))
+    screen.key(allowed={'q':'quit'})
 
 curses.wrapper(main)
 
